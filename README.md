@@ -26,7 +26,7 @@ balances and to claim their tokens without the application needing to be aware o
 A node-based gateway server that answers queries for l2 gateway function calls relating to the merkle-drop contract.
 
 ## Operation
-![sequence.png]
+![Sequence Diagram](sequence.png)
 
 Calling an l2 gateway function is a three-step process:
 
