@@ -1,0 +1,19 @@
+{
+  "name": "layer2-demo-proxy",
+  "version": "1.0.0",
+  "description": "Layer 2 test",
+  "main": "index.js",
+  "scripts": {
+    "serve": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "ethers": "^5.0.19",
+    "express": "^4.17.1",
+    "merkle-tree-solidity": "^1.0.8",
+    "node": "^15.0.1"
+  }
+}
