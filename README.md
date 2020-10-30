@@ -6,11 +6,11 @@ This repository contains the components necessary for a demonstration of the "l2
 # Run a local ganache server in deterministic mode
 ganache-cli --deterministic &
 # Deploy the example contract
-cd contract && truffle deploy --network=development && cd ..
+cd contract && npm install && truffle deploy --network=development && cd ..
 # Start the demo l2 gateway
-cd gateway && npm run serve & && cd ..
+cd gateway && npm install && npm run serve & && cd ..
 # Serve up the demo app on port 8000
-cd client && python -m SimpleHTTPServer && cd ..
+cd caller && python -m SimpleHTTPServer && cd ..
 ```
 
 ## Components
