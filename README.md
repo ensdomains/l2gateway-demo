@@ -13,11 +13,6 @@ cd gateway && npm install && npm run serve & && cd ..
 cd caller && python -m SimpleHTTPServer && cd ..
 ```
 
-Import one of addresses which constructed MerkleTree (eg: `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1` which is one of available accounts in Ganache if you started it with `--deterministic`) into Metamask/your wallet and point the network to `localhost`.
-
-Open your browser on localhost:8000.
-If all setup successfull, you should see `Your balance is 0 MERKLE tokens, with 23.7337513105314 available to claim.` message on the page.
-
 ## Components
 ### [Caller](caller)
 A very simple webapp that demonstrates how to call l2 gateway functions. main.js implements the application
