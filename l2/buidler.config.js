@@ -7,6 +7,16 @@ require('@eth-optimism/ovm-toolchain/build/src/buidler-plugins/buidler-ovm-compi
 require('@eth-optimism/ovm-toolchain/build/src/buidler-plugins/buidler-ovm-node');
 
 module.exports = {
+  networks: {
+    integration: {
+      url: "http://localhost:8545/"
+    }
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0
+    }
+  },
   solc: {
     version: "0.6.8",
   },

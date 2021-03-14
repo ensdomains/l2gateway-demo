@@ -1,8 +1,12 @@
 usePlugin("@nomiclabs/buidler-waffle");
 usePlugin("@nomiclabs/buidler-ethers");
-usePlugin("buidler-deploy");
 
 module.exports = {
+  networks: {
+    integration: {
+      url: "http://localhost:9545/" 
+    }
+  },
   solc: {
     version: "0.7.6",
   },
