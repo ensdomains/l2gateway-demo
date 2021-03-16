@@ -10,12 +10,13 @@
   "license": "ISC",
   "devDependencies": {
     "@eth-optimism/ovm-toolchain": "0.0.2-alpha.2",
-    "@nomiclabs/buidler": "^1.4.8",
-    "@nomiclabs/buidler-ethers": "^2.0.2",
-    "@nomiclabs/buidler-waffle": "^2.1.0",
+    "@eth-optimism/plugins": "0.0.20",
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^3.3.0",
     "chai": "^4.2.0",
     "ethereum-waffle": "^3.2.1",
-    "ethers": "^5.0.25"
+    "ethers": "^5.0.25",
+    "hardhat": "^2.1.1"
   }
 }
