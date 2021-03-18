@@ -71,6 +71,7 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
     const stateBatchHeader = await getLatestStateBatchHeader();
     // The l2 block number we'll use is the last one in the state batch
     const l2BlockNumber = stateBatchHeader.batch.prevTotalElements.add(stateBatchHeader.batch.batchSize);
+    console.log({batchIndex: stateBatchHeader.batch.batchIndex.toNumber(), batchSize: stateBatchHeader.batch.batchSize.toNumber(), prevTotalElements: stateBatchHeader.batch.prevTotalElements.toNumber(), latest: await l2_provider.getBlockNumber()});
 
     // Construct a merkle proof for the state root we need
     const elements = []
@@ -99,7 +100,8 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
 
     // Get the address for the L2 resolver contract, and the slot that contains the data we want
     const l2ResolverAddress = await contract.l2resolver();
-    const addrSlot = ethers.utils.keccak256(node + '00'.repeat(32));
+    console.log(node + '00'.repeat(32));
+    const addrSlot = ethers.utils.keccak256(node + '00'.repeat(31) + '01');
 
     // Get a proof of the contents of that slot at the required L2 block
     const proof = await l2_provider.send('eth_getProof', [
@@ -107,13 +109,12 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
         [addrSlot],
         '0x' + BigNumber.from(l2BlockNumber).toHexString().slice(2).replace(/^0+/, '')
     ]);
-    console.log(proof);
+    console.log(proof.storageProof[0]);
 
     const addr = ethers.utils.hexDataSlice(ethers.utils.hexZeroPad(proof.storageProof[0].value, 32), 12);
 
     const data = [
         node,
-        addr,
         {
             stateRoot: stateBatchHeader.stateRoots[index],
             stateRootBatchHeader: stateBatchHeader.batch,

@@ -4,7 +4,7 @@ const namehash = require('eth-ens-namehash');
 const resolverStubABI = require('../abis/OptimismResolverStub.json').abi;
 
 const PROVIDER_URL = "http://localhost:9545/";
-const RESOLVER_STUB_ADDRESS = '0xa10542f51041645d61a49121383FD80b0D18D986';
+const RESOLVER_STUB_ADDRESS = '0xe0286d90747658Ff5Ced2be42DbC9b901b3Eb68d';
 
 
 /*
@@ -70,9 +70,8 @@ async function callL2Function(contract, functionName, args) {
         to: await contract.resolvedAddress,
         data: callbackData
     });
-    console.log({callbackResult});
     // Use the return type of the original ABI definition to decode the result.
-    return contract.interface.decodeFunctionResult(functionName, callbackResult);
+    return contract.interface.decodeFunctionResult(callbackId, callbackResult);
 }
 
 /**
@@ -99,7 +98,7 @@ const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
 const stubResolver = new ethers.Contract(RESOLVER_STUB_ADDRESS, resolverStubABI, provider);
 
 async function main() {
-    const node = namehash.hash('test.eth');
+    const node = namehash.hash('test.test');
     const result = await callL2Function(stubResolver, 'addr', [node]);
     console.log(result);
 }
