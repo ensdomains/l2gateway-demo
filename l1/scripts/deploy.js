@@ -1,4 +1,4 @@
-const bre = require("@nomiclabs/buidler");
+const hre = require("hardhat");
 
 const OVM_ADDRESS_MANAGER = "0x3e4CFaa8730092552d9425575E49bB542e329981";
 const L2_RESOLVER = "0x54ad4ce757a00bF29305A694Cb9173C506031012";

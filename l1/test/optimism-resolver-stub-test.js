@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require('@nomiclabs/buidler');
+const { ethers } = require('hardhat');
 const { Signer, ContractFactory, Contract, BigNumber } = require('ethers');
 const { keccak256 } = require('ethers/lib/utils');
 const { smockit, MockContract } = require('@eth-optimism/smock');
@@ -44,10 +44,10 @@ describe("OptimismResolverStub", function() {
   let mock__OVM_CanonicalTransactionChain;
   let mock__OVM_StateCommitmentChain;
   before(async () => {
-    mock__OVM_CanonicalTransactionChain = smockit(
+    mock__OVM_CanonicalTransactionChain = await smockit(
       await ethers.getContractFactory('OVM_CanonicalTransactionChain')
     );
-    mock__OVM_StateCommitmentChain = smockit(
+    mock__OVM_StateCommitmentChain = await smockit(
       await ethers.getContractFactory('OVM_StateCommitmentChain')
     );
 

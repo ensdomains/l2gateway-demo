@@ -1,5 +1,5 @@
-usePlugin("@nomiclabs/buidler-waffle");
-usePlugin("@nomiclabs/buidler-ethers");
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-ethers");
 
 module.exports = {
   networks: {
@@ -7,7 +7,7 @@ module.exports = {
       url: "http://localhost:9545/" 
     }
   },
-  solc: {
+  solidity: {
     version: "0.7.6",
   },
   external: {
