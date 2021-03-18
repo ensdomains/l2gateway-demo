@@ -1,7 +1,7 @@
 const bre = require("@nomiclabs/buidler");
 
 const OVM_ADDRESS_MANAGER = "0x3e4CFaa8730092552d9425575E49bB542e329981";
-const L2_RESOLVER = "0x219d0676001d15f37f67082eb662e0149CCCF7CE";
+const L2_RESOLVER = "0x54ad4ce757a00bF29305A694Cb9173C506031012";
 
 async function main() {
   const OptimismResolverStub = await ethers.getContractFactory("OptimismResolverStub");

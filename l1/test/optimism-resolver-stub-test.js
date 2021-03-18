@@ -89,13 +89,14 @@ describe("OptimismResolverStub", function() {
       testAddress = await account2.getAddress();
       testNode = namehash.hash('test.eth');
       const storageKey = keccak256(
-        testNode + '00'.repeat(32)
+        testNode + '00'.repeat(31) + '01'
       )
       const storageGenerator = await TrieTestGenerator.fromNodes({
         nodes: [
           {
             key: storageKey,
-            val: '0x000000000000000000000000' + testAddress.substring(2),
+            // 0x94 is the RLP prefix for a 20-byte string
+            val: '0x94' + testAddress.substring(2),
           },
         ],
         secure: true,
@@ -133,7 +134,7 @@ describe("OptimismResolverStub", function() {
     })
 
     it("should verify proofs of resolution results", async function() {
-      expect(await stub.addrWithProof(testNode, testAddress, proof)).to.equal(testAddress);
+      expect(await stub.addrWithProof(testNode, proof)).to.equal(testAddress);
     });
   });
 });
