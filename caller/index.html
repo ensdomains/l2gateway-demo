@@ -3,13 +3,50 @@
 <head>
     <meta charset="utf-8">
     <title>Layer 2 callable demo</title>
+    <style type="text/css">
+        body {
+            padding: 2em;
+        }
+        td {
+            padding-bottom: 1em;
+        }
+        th {
+            text-align: left;
+            vertical-align: top;
+        }
+        .data {
+            white-space: pre;
+            width: 800px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+    </style>
 </head>
 <body>
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"
     type="application/javascript"></script>
     <script src="l2gateway.js"></script>
     <script src="main.js"></script>
-    <p>Your balance is <span id="balance">0</span> MERKLE tokens, with <span id="claimable">0</span> available to claim.</p>
-    <button onclick="javascript:claim()">Claim tokens</button>
+    <h1>ENS Optimism L2 demo</h1>
+    <p>This app demonstrates an MVP of ENS L2 integration.</p>
+    <p>To use, first follow the <a href="https://github.com/ensdomains/l2gateway-demo">project README</a> to run the demo, then:</p>
+    <ol>
+        <li>Enter the address for the ENS registry returned by the deployment script in the "ENS Registry Address" box below.</li>
+        <li>Enter 'test.test' in the "Name" box.</li>
+        <li>Click "Lookup Resolver" to find the resolver in ENS.</li>
+        <li>Click "Find gateway" to query the resolver for the gateway address.</li>
+        <li>Click "Query gateway" to query the gateway.</li>
+        <li>Click "Process gateway response" to ask the L1 resolver to process the gateway response and return the result.</li>
+    </ol>
+    <p>At each step you will be shown the intermediate results. In a real implementation, all of this would be done invisibly behind the scenes with a single API call.</p>
+    <table>
+        <tr><th>ENS Registry Address</th><td><input type="text" id="ens" /></td><td></td></tr>
+        <tr><th>Name</th><td><input type="text" id="name" /></td><td><button onclick="findResolver()">Lookup Resolver</button></td></tr>
+        <tr><th>Resolver</th><td><div class="data" id="resolver"></div></td><td><button onclick="findGateway()">Find Gateway</button></td></tr>
+        <tr><th>Gateway Address</th><td><div class="data" id="gateway"></div></td><td><button onclick="queryGateway()">Query Gateway</button></td></tr>
+        <tr><th>Response Prefix</th><td><div class="data" id="prefix"></div></td><td></td></tr>
+        <tr><th>Gateway Response</th><td><div class="data" id="response"></div></td><td><button onclick="processResponse()">Process gateway response</button></td></tr>
+        <tr><th>Result</th><td><div class="data" id="result"></div></td></tr>
+    </table>
 </body>
 </html>

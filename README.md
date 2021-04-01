@@ -1,41 +1,70 @@
 # L2 Gateway Demo
-This repository contains the components necessary for a demonstration of the "l2 gateway" proto-standard.
+A demonstration and MVP of an Ethereum <-> Optimism bridge for resolving ENS names.
+
+This is an implementation of the ideas outlined in [this Medium post](https://medium.com/the-ethereum-name-service/a-general-purpose-bridge-for-ethereum-layer-2s-e28810ec1d88).
 
 ## Usage
+
+In a terminal window, download, build, and run Optimism's integration repository:
+
 ```
-# Run a local ganache server in deterministic mode
-ganache-cli --deterministic &
-# Deploy the example contract
-cd contract && npm install && truffle deploy --network=development && cd ..
-# Start the demo l2 gateway
-cd gateway && npm install && npm run serve & && cd ..
-# Serve up the demo app on port 8000
-cd caller && python -m SimpleHTTPServer && cd ..
+$ git clone git@github.com:ethereum-optimism/optimism-integration.git --recurse-submodules
+$ cd optimism-integration
+
+# The `docker` submodule is a one stop shop for building containers
+$ ./docker/build.sh
+
+# Run published images of full system
+$ make up
 ```
 
-Import one of addresses which constructed MerkleTree (eg: `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1` which is one of available accounts in Ganache if you started it with `--deterministic`) into Metamask/your wallet and point the network to `localhost`.
+In a second terminal window, deploy our code to the L1 and L2 chains exposed by optimism-integration:
 
-Open your browser on localhost:8000.
-If all setup successfull, you should see `Your balance is 0 MERKLE tokens, with 23.7337513105314 available to claim.` message on the page.
+```
+$ git clone git@github.com:ensdomains/l2gateway-demo.git
+$ cd l2gateway-demo/contracts
+$ npm install
+$ npx hardhat --network integration run scripts/deploy.js
+```
+
+Make note of the ENS registry address logged to the console.
+
+Now run the gateway service:
+
+```
+$ cd ../gateway
+$ npm install
+$ npm run serve
+```
+
+In a third console window, serve up the demo app:
+
+```
+$ cd l2gateway-demo/caller
+$ python -m SimpleHTTPServer
+```
+
+Finally, go to [http://localhost:8080/](http://localhost:8080/) in your browser to try the demo out.
 
 ## Components
 ### [Caller](caller)
-A very simple webapp that demonstrates how to call l2 gateway functions. main.js implements the application
-logic, while l2gateway.js implements the generic gateway call functionality.
+A very simple webapp that demonstrates the flow of resolving an ENS name via an L2 gateway.
 
-### [Contract](contract)
-An ERC20-compatible merkle-drop token contract that uses l2 gateway to allow callers to query their claimable
-balances and to claim their tokens without the application needing to be aware of the implementation details.
+### [Contracts](contracts)
+`OptimismResolverStub` is a L1 (Ethereum) ENS resolver contract that implements the proposed protocol, with
+functions to return the gateway address and required prefix for a query, and to verify the response from the gateway.
+
+`OptimismResolver` is an L2 (Optimism) ENS resolver contract that stores and returns the data necessary to resolve an ENS name.
 
 ### [Gateway](gateway)
-A node-based gateway server that answers queries for l2 gateway function calls relating to the merkle-drop contract.
+A node-based gateway server that answers queries for l2 gateway function calls relating to Optimism-based L2 resolvers.
 
 ## Operation
 ![Sequence Diagram](sequence.png)
 
 Calling an l2 gateway function is a three-step process:
 
- 1. Call the contract's "stub" function with the desired parameters - eg `claimableBalance(address)`. The function returns `prefix` and `url`.
+ 1. Call the contract's "stub" function with the desired parameters - eg `addr(address)`. The function returns `prefix` and `url`.
  2. Make a POST request to the gateway server at `url` with the same calldata as in step 1. The server returns `callbackData`.
  3. Check that `callbackData` starts with `prefix`; if it does not, throw an error. This check prevents the gateway server from serving you the result of a different query than the one you requested.
  4. Call the contract with `callbackData`; the return value is the result of the call.

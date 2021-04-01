@@ -1,33 +1,194 @@
 window.ethereum.enable();
 const provider = new ethers.providers.Web3Provider(window.ethereum);
+let node, resolver, prefix, gatewayURL, response;
 
-// The ABI of our token contract.
-const merkleABI = [
-    // A normal everyday function
-    "function balanceOf(address) view returns (uint)",
-    // These 'imaginary functions' do not exist with the specified return type; instead, there is a stub
-    // function with the specified name and parameters which returns (bytes prefix, string url), and a
-    // transformer function that has the specified return type. Together, these form a composite 'l2 function'.
-    "function claimableBalance(address) view returns(uint)",
-    "function claim(address) view returns(uint)",
-]
-const merkleAddress = "0xCfEB869F69431e42cdB54A4F4f105C19C080A601";
-const merkleToken = new ethers.Contract(merkleAddress, merkleABI, provider.getSigner());
+const ENS_ABI = [
+    "function resolver(bytes32 node) public view returns (address)"
+];
 
-ethereum.on('accountsChanged', (accounts) => {
-    if(accounts.length == 0) return;
-    update(accounts[0]);
-});
+const L2_RESOLVER_ABI = [
+    "function addr(bytes32 node) public view returns(address)"
+];
 
-// Update the balances in the UI
-async function update(account) {
-    const balanceElement = document.getElementById("balance");
-    const balance = await merkleToken.balanceOf(account);
-    balanceElement.innerText = balance / 1e18;
+const ADDR_ABI = {
+    "inputs": [
+        {
+            "internalType": "bytes32",
+            "name": "node",
+            "type": "bytes32"
+        }
+    ],
+    "name": "addr",
+    "outputs": [
+        {
+            "internalType": "bytes",
+            "name": "prefix",
+            "type": "bytes"
+        },
+        {
+            "internalType": "string",
+            "name": "url",
+            "type": "string"
+        }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+};
 
-    const claimableElement = document.getElementById("claimable");
-    const claimable = await callL2Function(merkleToken, "claimableBalance", [account]);
-    claimableElement.innerText = claimable / 1e18;
+const ADDR_WITH_PROOF_ABI = {
+    "inputs": [
+        {
+            "internalType": "bytes32",
+            "name": "node",
+            "type": "bytes32"
+        },
+        {
+            "components": [
+                {
+                    "internalType": "bytes32",
+                    "name": "stateRoot",
+                    "type": "bytes32"
+                },
+                {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "batchIndex",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "batchRoot",
+                            "type": "bytes32"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "batchSize",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "prevTotalElements",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bytes",
+                            "name": "extraData",
+                            "type": "bytes"
+                        }
+                    ],
+                    "internalType": "struct Lib_OVMCodec.ChainBatchHeader",
+                    "name": "stateRootBatchHeader",
+                    "type": "tuple"
+                },
+                {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "index",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bytes32[]",
+                            "name": "siblings",
+                            "type": "bytes32[]"
+                        }
+                    ],
+                    "internalType": "struct Lib_OVMCodec.ChainInclusionProof",
+                    "name": "stateRootProof",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "stateTrieWitness",
+                    "type": "bytes"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "storageTrieWitness",
+                    "type": "bytes"
+                }
+            ],
+            "internalType": "struct OptimismResolverStub.L2StateProof",
+            "name": "proof",
+            "type": "tuple"
+        }
+    ],
+    "name": "addrWithProof",
+    "outputs": [
+        {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+        }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+};
+
+async function doGatewayQuery(gatewayURL, contract, functionName, args) {
+    // Encode the call data
+    const callData = contract.interface.encodeFunctionData(functionName, args);
+    
+    const response = await fetch(gatewayURL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'data': callData,
+            'address': await contract.resolvedAddress,
+        })
+    });
+    const callbackData = await response.json();
+    
+    return callbackData.data;
+}
+
+async function findResolver() {
+    const ensAddress = document.getElementById("ens").value;
+    const ens = new ethers.Contract(ensAddress, ENS_ABI, provider);
+    node = ethers.utils.namehash(document.getElementById("name").value);
+    const resolverAddress = await ens.resolver(node);
+    resolver = new ethers.Contract(resolverAddress, [ADDR_ABI, ADDR_WITH_PROOF_ABI], provider);
+    document.getElementById("resolver").innerText = resolverAddress;
+}
+
+async function findGateway() {
+    [prefix, gatewayURL] = await resolver.addr(node);
+    document.getElementById("gateway").innerText = gatewayURL;
+    document.getElementById("prefix").innerText = "addrWithProof(" + JSON.stringify(ethers.utils.defaultAbiCoder.decode(['bytes32'], '0x' + prefix.slice(10))).slice(1, -1) + ", ...)";
+}
+
+function dictMap(args, types) {
+    return Object.fromEntries(args.map((arg, i) => {
+        const type = types[i];
+        switch(type.type) {
+        case 'uint256':
+            return [type.name, arg.toNumber()];
+        case 'tuple':
+            return [type.name, dictMap(arg, type.components)];
+        default:
+            return [type.name, arg];
+        }
+    }));
+}
+
+async function queryGateway() {
+    response = await doGatewayQuery(gatewayURL, resolver, "addr", [node]);
+    const decodedResponse = resolver.interface.decodeFunctionData(response.slice(0, 10), response);
+    const dictifiedResponse = dictMap(decodedResponse, ADDR_WITH_PROOF_ABI.inputs);
+    document.getElementById("response").innerText = `addrWithProof(${JSON.stringify(dictifiedResponse, null, 4).slice(1, -1)})`;
+}
+
+async function processResponse() {
+    const result = await resolver.provider.call({
+        to: await resolver.resolvedAddress,
+        data: response,
+    });
+    const decodedResult = resolver.interface.decodeFunctionResult("addrWithProof", result);
+    document.getElementById("result").innerText = decodedResult;
 }
 
 // Send a claim transaction

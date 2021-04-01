@@ -4,7 +4,7 @@ const namehash = require('eth-ens-namehash');
 const resolverStubABI = require('../abis/OptimismResolverStub.json').abi;
 
 const PROVIDER_URL = "http://localhost:9545/";
-const RESOLVER_STUB_ADDRESS = '0xe0286d90747658Ff5Ced2be42DbC9b901b3Eb68d';
+const RESOLVER_STUB_ADDRESS = '0x2b57c4aB6D64a2befcb67D46bdc302809418bd1c';
 
 
 /*
