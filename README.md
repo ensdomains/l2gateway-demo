@@ -23,6 +23,7 @@ In a second terminal window, deploy our code to the L1 and L2 chains exposed by 
 ```
 $ git clone git@github.com:ensdomains/l2gateway-demo.git
 $ cd l2gateway-demo/contracts
+$ git checkout optimism
 $ npm install
 $ npx hardhat --network integration run scripts/deploy.js
 ```
@@ -44,7 +45,7 @@ $ cd l2gateway-demo/caller
 $ python -m SimpleHTTPServer
 ```
 
-Finally, go to [http://localhost:8080/](http://localhost:8080/) in your browser to try the demo out.
+Finally, go to [http://localhost:8000/](http://localhost:8000/) in your browser to try the demo out.
 
 ## Components
 ### [Caller](caller)
