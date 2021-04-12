@@ -44,7 +44,7 @@ $ cd l2gateway-demo/caller
 $ python -m SimpleHTTPServer
 ```
 
-Finally, go to [http://localhost:8080/](http://localhost:8080/) in your browser to try the demo out.
+Finally, go to [http://localhost:8080/](http://localhost:8000/) in your browser to try the demo out.
 
 ## Components
 ### [Caller](caller)
