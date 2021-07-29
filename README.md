@@ -58,6 +58,8 @@ ganache-cli -p 9545
 
 Make note of the private key of accounts 0
 
+Deploy l2 resolver contract
+
 ```
 $ git clone git@github.com:ensdomains/l2gateway-demo.git
 $ cd l2gateway-demo/contracts
