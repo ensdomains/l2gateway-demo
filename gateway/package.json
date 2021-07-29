@@ -14,6 +14,7 @@
   "dependencies": {
     "@eth-optimism/contracts": "^0.1.11",
     "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
     "ethers": "^5.0.19",
     "express": "^4.17.1",
     "merkle-tree-solidity": "^1.0.8",

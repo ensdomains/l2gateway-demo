@@ -1,13 +1,9 @@
 window.ethereum.enable();
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-let node, resolver, prefix, gatewayURL, response;
+let node, resolver, prefix, url, gatewayURL, response;
 
 const ENS_ABI = [
     "function resolver(bytes32 node) public view returns (address)"
-];
-
-const L2_RESOLVER_ABI = [
-    "function addr(bytes32 node) public view returns(address)"
 ];
 
 const ADDR_ABI = {
@@ -36,94 +32,39 @@ const ADDR_ABI = {
 };
 
 const ADDR_WITH_PROOF_ABI = {
-    "inputs": [
+    "inputs":[
         {
-            "internalType": "bytes32",
-            "name": "node",
-            "type": "bytes32"
+            "internalType":"bytes32",
+            "name":"node",
+            "type":"bytes32"
         },
         {
-            "components": [
+            "components":[
                 {
-                    "internalType": "bytes32",
-                    "name": "stateRoot",
-                    "type": "bytes32"
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "uint256",
-                            "name": "batchIndex",
-                            "type": "uint256"
-                        },
-                        {
-                            "internalType": "bytes32",
-                            "name": "batchRoot",
-                            "type": "bytes32"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "batchSize",
-                            "type": "uint256"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "prevTotalElements",
-                            "type": "uint256"
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes"
-                        }
-                    ],
-                    "internalType": "struct Lib_OVMCodec.ChainBatchHeader",
-                    "name": "stateRootBatchHeader",
-                    "type": "tuple"
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "uint256",
-                            "name": "index",
-                            "type": "uint256"
-                        },
-                        {
-                            "internalType": "bytes32[]",
-                            "name": "siblings",
-                            "type": "bytes32[]"
-                        }
-                    ],
-                    "internalType": "struct Lib_OVMCodec.ChainInclusionProof",
-                    "name": "stateRootProof",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "bytes",
-                    "name": "stateTrieWitness",
-                    "type": "bytes"
-                },
-                {
-                    "internalType": "bytes",
-                    "name": "storageTrieWitness",
-                    "type": "bytes"
+                    "internalType":"bytes",
+                    "name":"signature",
+                    "type":"bytes"
+                },{
+                    "internalType":"address",
+                    "name":"addr",
+                    "type":"address"
                 }
             ],
-            "internalType": "struct OptimismResolverStub.L2StateProof",
-            "name": "proof",
-            "type": "tuple"
+            "internalType":"struct AppResolverStub.Proof",
+            "name":"proof",
+            "type":"tuple"
         }
     ],
-    "name": "addrWithProof",
-    "outputs": [
+    "name":"addrWithProof",
+    "outputs":[
         {
-            "internalType": "address",
-            "name": "",
-            "type": "address"
+            "internalType":"address",
+            "name":"",
+            "type":"address"
         }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability":"view",
+    "type":"function"
 };
 
 async function doGatewayQuery(gatewayURL, contract, functionName, args) {
@@ -156,8 +97,11 @@ async function findResolver() {
 }
 
 async function findGateway() {
-    [prefix, gatewayURL] = await resolver.addr(node);
-    document.getElementById("gateway").innerText = gatewayURL;
+    console.log('***findGateway1', {node, resolver})
+    const data = await resolver.addr(node);
+    prefix = data.prefix
+    url    = data.url
+    document.getElementById("gateway").innerText = url;
     document.getElementById("prefix").innerText = "addrWithProof(" + JSON.stringify(ethers.utils.defaultAbiCoder.decode(['bytes32'], '0x' + prefix.slice(10))).slice(1, -1) + ", ...)";
 }
 
@@ -176,7 +120,7 @@ function dictMap(args, types) {
 }
 
 async function queryGateway() {
-    response = await doGatewayQuery(gatewayURL, resolver, "addr", [node]);
+    response = await doGatewayQuery(url, resolver, "addr", [node]);
     const decodedResponse = resolver.interface.decodeFunctionData(response.slice(0, 10), response);
     const dictifiedResponse = dictMap(decodedResponse, ADDR_WITH_PROOF_ABI.inputs);
     document.getElementById("response").innerText = `addrWithProof(${JSON.stringify(dictifiedResponse, null, 4).slice(1, -1)})`;
