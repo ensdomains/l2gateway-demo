@@ -2,82 +2,42 @@ const { expect } = require("chai");
 const { ethers } = require('hardhat');
 const { Signer, ContractFactory, Contract, BigNumber } = require('ethers');
 const { keccak256 } = require('ethers/lib/utils');
-const { smockit, MockContract } = require('@eth-optimism/smock');
 const namehash = require('eth-ens-namehash');
 
-const {
-  NULL_BYTES32,
-  DUMMY_BATCH_HEADERS,
-  DUMMY_BATCH_PROOFS,
-} = require('./helpers/constants');
-const { TrieTestGenerator } = require('./helpers/trie-test-generator');
 const { toHexString } = require('./helpers/utils');
 
 const RESOLVER_ADDR = "0x0123456789012345678901234567890123456789";
 const GATEWAY = "http://localhost:8080/query/" + RESOLVER_ADDR;
 
-const setProxyTarget = async (AddressManager, name, target) => {
-  const SimpleProxy = await (
-    await ethers.getContractFactory('Helper_SimpleProxy')
-  ).deploy()
-
-  await SimpleProxy.setTarget(target.address)
-  await AddressManager.setAddress(name, SimpleProxy.address)
-}
-
-const makeAddressManager = async () => {
-  return (await ethers.getContractFactory('Lib_AddressManager')).deploy()
-}
-
-
-describe("OptimismResolverStub", function() {
+describe("AppResolverStub", function() {
   let signer;
   let account2;
   before(async () => {
     [signer, account2] = await ethers.getSigners()
   });
 
-  let addressManager
+  let Factory__AppResolverStub;
+  let Factory_MockRegistry;
   before(async () => {
-    addressManager = await makeAddressManager()
-  });
-
-  let mock__OVM_CanonicalTransactionChain;
-  let mock__OVM_StateCommitmentChain;
-  before(async () => {
-    mock__OVM_CanonicalTransactionChain = await smockit(
-      await ethers.getContractFactory('OVM_CanonicalTransactionChain')
+    Factory__AppResolverStub = await ethers.getContractFactory(
+      'AppResolverStub'
     );
-    mock__OVM_StateCommitmentChain = await smockit(
-      await ethers.getContractFactory('OVM_StateCommitmentChain')
-    );
-
-    await setProxyTarget(
-      addressManager,
-      'OVM_CanonicalTransactionChain',
-      mock__OVM_CanonicalTransactionChain
-    );
-    await setProxyTarget(
-      addressManager,
-      'OVM_StateCommitmentChain',
-      mock__OVM_StateCommitmentChain
+    Factory_MockRegistry = await ethers.getContractFactory(
+      'MockRegistry'
     );
   });
 
-  let Factory__OptimismResolverStub;
-  before(async () => {
-    Factory__OptimismResolverStub = await ethers.getContractFactory(
-      'OptimismResolverStub'
-    );
-  });
-
-  let stub;
+  let stub, ownerAddress;
   beforeEach(async () => {
-    stub = await Factory__OptimismResolverStub.deploy(addressManager.address, GATEWAY, RESOLVER_ADDR);
+    ownerAddress = await signer.getAddress(ownerAddress)
+    registry = await Factory_MockRegistry.deploy(ownerAddress)
+    stub = await Factory__AppResolverStub.deploy(registry.address, GATEWAY, RESOLVER_ADDR);
     await stub.deployed();
   });
 
   it("Should return the gateway and contract address from the constructor", async function() {
+    let testNode = namehash.hash('test.eth');
+    expect(await registry.owner(testNode)).to.equal(ownerAddress);
     expect(await stub.l2resolver()).to.equal(RESOLVER_ADDR);
     expect(await stub.gateway()).to.equal(GATEWAY);
   });
@@ -86,56 +46,24 @@ describe("OptimismResolverStub", function() {
     let testAddress;
     let testNode;
     let proof;
+    let messageHash;
     before(async () => {
-      testAddress = await account2.getAddress();
+      testAddress = await signer.getAddress();
       testNode = namehash.hash('test.eth');
-      const storageKey = keccak256(
-        testNode + '00'.repeat(31) + '01'
-      )
-      const storageGenerator = await TrieTestGenerator.fromNodes({
-        nodes: [
-          {
-            key: storageKey,
-            // 0x94 is the RLP prefix for a 20-byte string
-            val: '0x94' + testAddress.substring(2),
-          },
-        ],
-        secure: true,
-      });
-
-      const generator = await TrieTestGenerator.fromAccounts({
-        accounts: [
-          {
-            address: RESOLVER_ADDR,
-            nonce: 0,
-            balance: 0,
-            codeHash: keccak256('0x1234'),
-            storageRoot: toHexString(storageGenerator._trie.root),
-          },
-        ],
-        secure: true,
-      });
-
+      messageHash = ethers.utils.solidityKeccak256(
+        ['bytes32'],[testNode]
+      );
+      let messageHashBinary = ethers.utils.arrayify(messageHash);
+      let signature = await signer.signMessage(messageHashBinary);
       proof = {
-        stateRoot: toHexString(generator._trie.root),
-        stateRootBatchHeader: DUMMY_BATCH_HEADERS[0],
-        stateRootProof: DUMMY_BATCH_PROOFS[0],
-        stateTrieWitness: (await generator.makeAccountProofTest(RESOLVER_ADDR))
-          .accountTrieWitness,
-        storageTrieWitness: (
-          await storageGenerator.makeInclusionProofTest(storageKey)
-        ).proof,
+        signature,
+        ownerAddress:testAddress
       };
     })
 
-    beforeEach(async () => {
-      mock__OVM_StateCommitmentChain.smocked.verifyStateCommitment.will.return.with(
-        true
-      );
-    })
-
     it("should verify proofs of resolution results", async function() {
-      expect(await stub.addrWithProof(testNode, proof)).to.equal(testAddress);
+      let newAddress = await stub.addrWithProof(testNode, proof)
+      expect(newAddress).to.equal(testAddress);
     });
   });
 });
