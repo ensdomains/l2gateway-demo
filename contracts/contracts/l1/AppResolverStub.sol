@@ -1,21 +1,19 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
-import './MockRegistry.sol';
+import { ENSRegistry } from "@ensdomains/ens/contracts/ENSRegistry.sol";
 
 contract AppResolverStub {
-  MockRegistry public ens;
+  ENSRegistry public ens;
   string public gateway;
-  address public l2resolver;
 
   struct Proof {
     bytes signature;
-    address ownerAddress;
+    address addr;
   }
 
-  constructor(MockRegistry _ens, string memory _gateway, address _l2resolver) {
+  constructor(ENSRegistry _ens, string memory _gateway) {
     ens = _ens;
     gateway = _gateway;
-    l2resolver = _l2resolver;
   }
 
   function addr(bytes32 node) external view returns(bytes memory prefix, string memory url) {
@@ -25,12 +23,12 @@ contract AppResolverStub {
   function addrWithProof(bytes32 node, Proof memory proof) external view returns(address) {
     address recovered = recoverAddress(node, proof);
     require(ens.owner(node) == recovered, "Signer is not the domain owner");
-    return recovered;
+    return proof.addr;
   }
 
   function recoverAddress(bytes32 node, Proof memory proof) internal pure returns(address) {
     (uint8 v, bytes32 r, bytes32 s) = splitSignature(proof.signature);
-    bytes32 messageHash = keccak256(abi.encodePacked(node));
+    bytes32 messageHash = keccak256(abi.encodePacked(node, proof.addr));
     bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
     return ecrecover(ethSignedMessageHash, v, r, s);
   }
