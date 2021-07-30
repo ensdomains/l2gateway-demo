@@ -46,10 +46,12 @@ describe("AppResolverStub", function() {
     let proof;
     let messageHash;
     before(async () => {
-      testAddress = await signer.getAddress();
       testNode = namehash.hash('test.eth');
+    })
+
+    it("should verify proofs of resolution results", async function() {
       messageHash = ethers.utils.solidityKeccak256(
-        ['bytes32', 'address'],[testNode, account2.address],
+        ['bytes32', 'address'],[testNode, account2.address]
       );
       let messageHashBinary = ethers.utils.arrayify(messageHash);
       let signature = await signer.signMessage(messageHashBinary);
@@ -57,11 +59,68 @@ describe("AppResolverStub", function() {
         signature,
         addr:account2.address
       };
-    })
 
-    it("should verify proofs of resolution results", async function() {
       let newAddress = await stub.addrWithProof(testNode, proof)
       expect(newAddress).to.equal(account2.address);
+    });
+
+    it("should not verify proofs if signature is not signed with address", async function() {
+      messageHash = ethers.utils.solidityKeccak256(
+        // Missing address
+        ['bytes32'],[testNode]
+      );
+      let messageHashBinary = ethers.utils.arrayify(messageHash);
+      let signature = await signer.signMessage(messageHashBinary);
+      proof = {
+        signature,
+        addr:account2.address
+      };
+
+      try {
+        await stub.addrWithProof(testNode, proof);
+      } catch (error) {
+        console.log(error.message);
+        expect(error.message).to.equal("VM Exception while processing transaction: reverted with reason string \'Signer is not the domain owner\'")
+      }
+    });
+
+    it("should not verify proofs if address is missing", async function() {
+      messageHash = ethers.utils.solidityKeccak256(
+        ['bytes32', 'address'],[testNode, account2.address]
+      );
+      let messageHashBinary = ethers.utils.arrayify(messageHash);
+      let signature = await signer.signMessage(messageHashBinary);
+      proof = {
+        signature,
+        addr:signer.address // use the address not used for message hash
+      };
+
+      try {
+        await stub.addrWithProof(testNode, proof);
+      } catch (error) {
+        console.log(error.message);
+        expect(error.message).to.equal("VM Exception while processing transaction: reverted with reason string \'Signer is not the domain owner\'")
+      }
+    });
+
+    it("should not verify proofs if signed by non domain owner", async function() {
+      messageHash = ethers.utils.solidityKeccak256(
+        ['bytes32', 'address'],[testNode, account2.address]
+      );
+      let messageHashBinary = ethers.utils.arrayify(messageHash);
+      // account2 is not the owner of `test.test`
+      let signature = await account2.signMessage(messageHashBinary);
+      proof = {
+        signature,
+        addr:account2.address
+      };
+
+      try {
+        await stub.addrWithProof(testNode, proof);
+      } catch (error) {
+        console.log(error.message);
+        expect(error.message).to.equal("VM Exception while processing transaction: reverted with reason string \'Signer is not the domain owner\'")
+      }
     });
   });
 });
