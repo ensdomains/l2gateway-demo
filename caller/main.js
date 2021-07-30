@@ -97,7 +97,6 @@ async function findResolver() {
 }
 
 async function findGateway() {
-    console.log('***findGateway1', {node, resolver})
     const data = await resolver.addr(node);
     prefix = data.prefix
     url    = data.url
@@ -127,8 +126,9 @@ async function queryGateway() {
 }
 
 async function processResponse() {
+    const resolvedAddress = await resolver.resolvedAddress
     const result = await resolver.provider.call({
-        to: await resolver.resolvedAddress,
+        to: resolvedAddress,
         data: response,
     });
     const decodedResult = resolver.interface.decodeFunctionResult("addrWithProof", result);

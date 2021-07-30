@@ -28,9 +28,10 @@ const functionHandlers: {[key: string]: (contract: ethers.Contract, args: ethers
 functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
     const PRIVATE_KEY:any = process.env.PRIVATE_KEY
     const ADDR:any = process.env.ADDR    
-    let messageHash = ethers.utils.solidityKeccak256(['bytes32'],[node]);
+    let messageHash = ethers.utils.solidityKeccak256(['bytes32', 'address'],[node, ADDR]);
     let messageHashBinary = ethers.utils.arrayify(messageHash);
     let signer = new ethers.Wallet(PRIVATE_KEY);
+    let signerAddress = signer.address;
     let signature = await signer.signMessage(messageHashBinary);
     const data = [
         node,
@@ -39,6 +40,9 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
           addr: ADDR
         }
     ];
+    console.log({
+        signerAddress,node,ADDR,messageHash, messageHashBinary, signature, data
+    })
     const r = contract.interface.encodeFunctionData('addrWithProof', data);
     return r
 }

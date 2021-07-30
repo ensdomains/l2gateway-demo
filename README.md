@@ -45,6 +45,7 @@ $ python -m SimpleHTTPServer
 ```
 
 Finally, go to [http://localhost:8000/](http://localhost:8000/) in your browser to try the demo out.
+Make sure your metamask RPC endpoints oint to ganache (localhost:9545)
 
 ## App/Trusted Gateway usage
 
@@ -99,6 +100,7 @@ $ python -m SimpleHTTPServer
 ```
 
 Finally, go to [http://localhost:8000/](http://localhost:8000/) in your browser to try the demo out.
+Make sure your metamask RPC endpoints oint to ganache (localhost:9545)
 
 ## Components
 ### [Caller](caller)
