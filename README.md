@@ -3,7 +3,7 @@ A demonstration and MVP of an Ethereum <-> Optimism bridge for resolving ENS nam
 
 This is an implementation of the ideas outlined in [this Medium post](https://medium.com/the-ethereum-name-service/a-general-purpose-bridge-for-ethereum-layer-2s-e28810ec1d88).
 
-## Usage
+## Optimism Gateway Usage
 
 In a terminal window, download, build, and run Optimism's integration repository:
 
@@ -45,6 +45,62 @@ $ python -m SimpleHTTPServer
 ```
 
 Finally, go to [http://localhost:8000/](http://localhost:8000/) in your browser to try the demo out.
+Make sure your metamask RPC endpoints oint to ganache (localhost:9545)
+
+## App/Trusted Gateway usage
+
+App gateway is a light weight alternative where app hosts own gateway and signs data with the public key of the domain owner. In this example, it fetches hard coded value and signs it with the name owner address.
+
+First start ganache on port 9545
+
+```
+ganache-cli -p 9545
+```
+
+Make note of the private key of accounts 0
+
+Deploy l2 resolver contract
+
+```
+$ git clone git@github.com:ensdomains/l2gateway-demo.git
+$ cd l2gateway-demo/contracts
+$ npm install
+$ npx hardhat --network integration run scripts/app_deploy.js
+```
+
+Make note of the ENS registry address logged to the console.
+
+Install gateway dependencies
+
+```
+$ cd ../gateway
+$ npm install
+```
+
+Set credentials
+
+```
+$ cp .env.org .env
+```
+
+Add PRIVATE_KEY of the address which is the owner of `ens.owner(node)` on l1
+Add ADDR which is the hardcoded value of `resolver.addr(node)` on l2
+
+Now start the server
+
+```
+$ npm run serve
+```
+
+In a third console window, serve up the demo app:
+
+```
+$ cd l2gateway-demo/caller
+$ python -m SimpleHTTPServer
+```
+
+Finally, go to [http://localhost:8000/](http://localhost:8000/) in your browser to try the demo out.
+Make sure your metamask RPC endpoints oint to ganache (localhost:9545)
 
 ## Components
 ### [Caller](caller)
