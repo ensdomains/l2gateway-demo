@@ -1,3 +1,1 @@
-contract Test{
-
-}
+contract Test {}

@@ -1,9 +1,10 @@
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OptimismResolver is Ownable {
-    mapping(bytes32=>address) addresses;
+    mapping(bytes32 => address) addresses;
 
     event AddrChanged(bytes32 indexed node, address a);
 
@@ -12,7 +13,7 @@ contract OptimismResolver is Ownable {
         emit AddrChanged(node, addr);
     }
 
-    function addr(bytes32 node) public view returns(address) {
+    function addr(bytes32 node) public view returns (address) {
         return addresses[node];
     }
 }
