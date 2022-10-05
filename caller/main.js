@@ -176,6 +176,10 @@ function dictMap(args, types) {
 }
 
 async function queryGateway() {
+    console.log({gatewayURL, resolver, node})
+    // node = test.test
+    // registry = 0x32c1F850Eb92b1049FC4691b6AC29327A0f28ddf
+    // resolver = 0x0a071a7cB0e4bb14C7974e9C39A0939D9Bfe5E67
     response = await doGatewayQuery(gatewayURL, resolver, "addr", [node]);
     const decodedResponse = resolver.interface.decodeFunctionData(response.slice(0, 10), response);
     const dictifiedResponse = dictMap(decodedResponse, ADDR_WITH_PROOF_ABI.inputs);

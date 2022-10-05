@@ -22,7 +22,8 @@ In a second terminal window, deploy our code to the L1 and L2 chains exposed by 
 $ git clone git@github.com:ensdomains/l2gateway-demo.git
 $ cd l2gateway-demo/contracts
 $ npm install
-$ npx hardhat --network integration run scripts/deploy.js
+$ npx hardhat --network optimism-goerli run scripts/deployL2.js
+$ npx hardhat --network goerli run scripts/deployL1.js
 ```
 
 Make note of the ENS registry address logged to the console.

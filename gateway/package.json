@@ -12,9 +12,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@eth-optimism/contracts": "^0.1.11",
+    "@eth-optimism/contracts": "^0.5.37",
     "cors": "^2.8.5",
-    "ethers": "^5.0.19",
+    "ethers": "^5.0.25",
     "express": "^4.17.1",
     "merkle-tree-solidity": "^1.0.8",
     "merkletreejs": "^0.2.13",

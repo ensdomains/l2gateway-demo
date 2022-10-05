@@ -10,13 +10,17 @@ import { loadContract, loadContractFromManager } from './ovm-contracts';
 import { RLP } from 'ethers/lib/utils';
 
 // Instantiate the ethers provider
-const L1_PROVIDER_URL = "http://localhost:9545/";
+// url: `https://eth-goerli.g.alchemy.com/v2/U1ARntTEGlBsfWuClAYbnoz7jJ9dXdnC`,
+// const L1_PROVIDER_URL = "http://localhost:9545/";
+const L1_PROVIDER_URL = "https://eth-goerli.g.alchemy.com/v2/U1ARntTEGlBsfWuClAYbnoz7jJ9dXdnC";
 const l1_provider = new ethers.providers.JsonRpcProvider(L1_PROVIDER_URL);
 
-const L2_PROVIDER_URL = "http://localhost:8545/";
+// l2url: `https://opt-goerli.g.alchemy.com/v2/oSCIVXdCPv0CSHRAECX_Y9ANvTsl-HC2`,
+// const L2_PROVIDER_URL = "http://localhost:8545/";
+const L2_PROVIDER_URL = "https://opt-goerli.g.alchemy.com/v2/oSCIVXdCPv0CSHRAECX_Y9ANvTsl-HC2";
 const l2_provider = new ethers.providers.JsonRpcProvider(L2_PROVIDER_URL);
 
-const ADDRESS_MANAGER_ADDRESS = '0x3e4CFaa8730092552d9425575E49bB542e329981';
+const ADDRESS_MANAGER_ADDRESS = '0xa6f73589243a6A7a9023b1Fa0651b1d89c177111';
 
 // Instantiate the manager
 const ovmAddressManager = loadContract('Lib_AddressManager', ADDRESS_MANAGER_ADDRESS, l1_provider);
@@ -37,16 +41,19 @@ interface StateRootBatchHeader {
 
 async function getLatestStateBatchHeader(): Promise<{batch: StateRootBatchHeader, stateRoots: string[]}> {
     // Instantiate the state commitment chain
-    const ovmStateCommitmentChain = await loadContractFromManager('OVM_StateCommitmentChain', ovmAddressManager, l1_provider);
-
+    const ovmStateCommitmentChain = await loadContractFromManager('StateCommitmentChain', ovmAddressManager, l1_provider);
     for(let endBlock = await l1_provider.getBlockNumber(); endBlock > 0; endBlock = Math.max(endBlock - 100, 0)) {
+        console.log('***getLatestStateBatchHeader3', endBlock)
         const startBlock = Math.max(endBlock - 100, 1);
+        console.log('***getLatestStateBatchHeader4.1', startBlock)
         const events: ethers.Event[] = await ovmStateCommitmentChain.queryFilter(
             ovmStateCommitmentChain.filters.StateBatchAppended(), startBlock, endBlock);
         if(events.length > 0) {
             const event = events[events.length - 1];
             const tx = await l1_provider.getTransaction(event.transactionHash);
+            console.log('***getLatestStateBatchHeader4.2', tx)
             const [ stateRoots ] = ovmStateCommitmentChain.interface.decodeFunctionData('appendStateBatch', tx.data);
+            console.log('***getLatestStateBatchHeader4.3', event.args)
             return {
                 batch: {
                     batchIndex: event.args?._batchIndex,
@@ -68,10 +75,12 @@ async function getLatestStateBatchHeader(): Promise<{batch: StateRootBatchHeader
 const functionHandlers: {[key: string]: (contract: ethers.Contract, args: ethers.utils.Result) => Promise<any>} = {};
 
 functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
+    console.log(1)
     const stateBatchHeader = await getLatestStateBatchHeader();
+    console.log(2, stateBatchHeader)
     // The l2 block number we'll use is the last one in the state batch
     const l2BlockNumber = stateBatchHeader.batch.prevTotalElements.add(stateBatchHeader.batch.batchSize);
-
+    console.log(3, {l2BlockNumber, batchSize: stateBatchHeader.batch.batchSize})
     // Construct a merkle proof for the state root we need
     const elements = []
     for (
@@ -80,36 +89,45 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
       i++
     ) {
       if (i < stateBatchHeader.stateRoots.length) {
+        console.log(4, i, stateBatchHeader.stateRoots[i])
         elements.push(stateBatchHeader.stateRoots[i])
       } else {
+        console.log(5, i, ethers.utils.keccak256('0x' + '00'.repeat(32)))
         elements.push(ethers.utils.keccak256('0x' + '00'.repeat(32)))
       }
     }
+    console.log(6, elements.length, Math.pow(2, Math.ceil(Math.log2(stateBatchHeader.stateRoots.length))))
     const hash = (el: Buffer | string): Buffer => {
       return Buffer.from(ethers.utils.keccak256(el).slice(2), 'hex')
     }
+    console.log(7)
     const leaves = elements.map((element) => {
       return Buffer.from(element.slice(2), 'hex')
     })
     const index = elements.length - 1;
+    console.log(9, index)
     const tree = new MerkleTree(leaves, hash)
+    console.log(10)
     const treeProof = tree.getProof(leaves[index], index).map((element) => {
       return element.data
     });
-
+    console.log(11, treeProof)
     // Get the address for the L2 resolver contract, and the slot that contains the data we want
     const l2ResolverAddress = await contract.l2resolver();
+    console.log(12, l2ResolverAddress)
     const addrSlot = ethers.utils.keccak256(node + '00'.repeat(31) + '01');
-
+    console.log(13, addrSlot)
     // Get a proof of the contents of that slot at the required L2 block
     const proof = await l2_provider.send('eth_getProof', [
         l2ResolverAddress,
         [addrSlot],
         '0x' + BigNumber.from(l2BlockNumber).toHexString().slice(2).replace(/^0+/, '')
     ]);
+    console.log(14, proof)
 
     const addr = ethers.utils.hexDataSlice(ethers.utils.hexZeroPad(proof.storageProof[0].value, 32), 12);
-
+    console.log(15, {addr, index, stateRootsLength:stateBatchHeader.stateRoots.length , stateRoots: stateBatchHeader.stateRoots})
+    
     const data = [
         node,
         {
@@ -123,6 +141,8 @@ functionHandlers['addr'] = async (contract: ethers.Contract, [ node ]) => {
             storageTrieWitness: RLP.encode(proof.storageProof[0].proof),
         }
     ];
+    console.log(16, data)
+    console.log(17, contract.interface.encodeFunctionData('addrWithProof', data))
     return contract.interface.encodeFunctionData('addrWithProof', data);
 }
 

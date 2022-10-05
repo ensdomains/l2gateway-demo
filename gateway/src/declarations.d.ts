@@ -1,1 +1,1 @@
-declare module "@eth-optimism/contracts/build/src/contract-defs";
+declare module "@eth-optimism/contracts/dist/contract-defs";

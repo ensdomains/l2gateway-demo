@@ -13,6 +13,8 @@ import {StateCommitmentChain} from "@eth-optimism/contracts/L1/rollup/StateCommi
 import {Lib_RLPReader} from "@eth-optimism/contracts/libraries/rlp/Lib_RLPReader.sol";
 import {Lib_BytesUtils} from "@eth-optimism/contracts/libraries/utils/Lib_BytesUtils.sol";
 
+// import "hardhat/console.sol";
+
 contract OptimismResolverStub is Lib_AddressResolver {
     string public gateway;
     address public l2resolver;
@@ -104,6 +106,20 @@ contract OptimismResolverStub is Lib_AddressResolver {
             // Lib_BytesUtils.toBytes32PadLeft(
             //     Lib_RLPReader.readBytes(retrievedValue)
             // );
-            Lib_BytesUtils.toBytes32(Lib_RLPReader.readBytes(retrievedValue));
+            toBytes32PadLeft(Lib_RLPReader.readBytes(retrievedValue));
+    }
+
+    // Ported old function from Lib_BytesUtils.sol
+    function toBytes32PadLeft(bytes memory _bytes)
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 ret;
+        uint256 len = _bytes.length <= 32 ? _bytes.length : 32;
+        assembly {
+            ret := shr(mul(sub(32, len), 8), mload(add(_bytes, 32)))
+        }
+        return ret;
     }
 }

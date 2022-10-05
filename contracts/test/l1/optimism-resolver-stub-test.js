@@ -39,27 +39,28 @@ describe("OptimismResolverStub", function() {
   let addressManager
   before(async () => {
     addressManager = await makeAddressManager()
+    console.log({addressManager})
   });
 
-  let mock__OVM_CanonicalTransactionChain;
-  let mock__OVM_StateCommitmentChain;
+  let mock__CanonicalTransactionChain;
+  let mock__StateCommitmentChain;
   before(async () => {
-    mock__OVM_CanonicalTransactionChain = await smockit(
-      await ethers.getContractFactory('OVM_CanonicalTransactionChain')
+    mock__CanonicalTransactionChain = await smockit(
+      await ethers.getContractFactory('CanonicalTransactionChain')
     );
-    mock__OVM_StateCommitmentChain = await smockit(
-      await ethers.getContractFactory('OVM_StateCommitmentChain')
+    mock__StateCommitmentChain = await smockit(
+      await ethers.getContractFactory('StateCommitmentChain')
     );
 
     await setProxyTarget(
       addressManager,
-      'OVM_CanonicalTransactionChain',
-      mock__OVM_CanonicalTransactionChain
+      'CanonicalTransactionChain',
+      mock__CanonicalTransactionChain
     );
     await setProxyTarget(
       addressManager,
-      'OVM_StateCommitmentChain',
-      mock__OVM_StateCommitmentChain
+      'StateCommitmentChain',
+      mock__StateCommitmentChain
     );
   });
 
@@ -128,12 +129,13 @@ describe("OptimismResolverStub", function() {
     })
 
     beforeEach(async () => {
-      mock__OVM_StateCommitmentChain.smocked.verifyStateCommitment.will.return.with(
+      mock__StateCommitmentChain.smocked.verifyStateCommitment.will.return.with(
         true
       );
     })
 
     it("should verify proofs of resolution results", async function() {
+      console.log({testAddress})
       expect(await stub.addrWithProof(testNode, proof)).to.equal(testAddress);
     });
   });
